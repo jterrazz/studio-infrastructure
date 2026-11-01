@@ -1,7 +1,9 @@
 # ADR-030: An image runs the app, and the chart runs its startup task
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-29
+
+The owner accepted it on 2026-11-01 ("ok").
 
 ## Context
 
