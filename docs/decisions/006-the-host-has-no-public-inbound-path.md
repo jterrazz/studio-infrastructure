@@ -11,8 +11,6 @@ Revised 2026-10-25: the guard no longer names port 2000, which nothing on the
 host binds since cloudflared left the host network.
 Revised 2026-10-25: the guard is the node's one firewall, a default deny on the
 tailnet and the bridge; UFW is gone, OpenSSH's own algorithms are kept.
-Revised 2026-11-25 (Proposed, awaiting the owner): the guard resets new TCP from
-`[::1]`, the address OrbStack's port forward dials from.
 
 ## Context
 
@@ -39,18 +37,6 @@ answered a neighbouring machine.
   and every Mac tool reach the VM) and DHCP's replies pass. UFW, which held a
   weaker copy of the same rules behind k3s' iptables chains, is gone. The
   first gate for 80/443 is Traefik's `loadBalancerSourceRanges`.
-- **Loopback passes, but not from `[::1]`.** OrbStack mirrors every wildcard
-  listener of the VM onto every interface of the Mac (`machines.expose_ports_to_lan`,
-  a setting global to all machines, so turning it off would also close the
-  relay machine's 443), and its forward enters the VM from the loopback of the
-  listener's family: the API server, the kubelet and node-exporter, which listen
-  on both families, were each reached from the LAN and from the Mac's own
-  tailnet address as `[::1]` (2026-11-25). So the guard's first rule resets new
-  TCP from `[::1]` on `lo`, ahead of the loopback accept; IPv4 loopback, which
-  the in-VM kubeconfig and k3s' own clients use, still passes. The residual: an
-  IPv4-only wildcard listener is forwarded from `127.0.0.1` and stays
-  unguarded; today that is only `0.0.0.0:22`, which the Mac's own sshd already
-  holds.
 - **Secrets encrypted at rest** (`secrets-encryption: true`): without it every
   Secret sits in plaintext in `state.db`, readable through `/mnt/machines`.
   Enabling encrypts only new writes, so the role runs
