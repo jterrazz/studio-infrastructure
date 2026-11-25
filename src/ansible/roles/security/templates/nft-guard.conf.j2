@@ -28,4 +28,12 @@ table inet studio_guard {
     iif "{{ security_guard_interface }}" udp sport 67 udp dport 68 accept
     iif "{{ security_guard_interface }}" drop
   }
+
+  # hazard: the tailnet's API traffic goes to the node address, so the API server must listen
+  # there (roles/k3s); k3s_node_ip is roles/k3s's default, which site.yml's play loads (ADR-006).
+  chain tailnet_api {
+    type nat hook prerouting priority dstnat; policy accept;
+
+    iifname "tailscale0" tcp dport 6443 counter dnat ip to {{ k3s_node_ip }}
+  }
 }

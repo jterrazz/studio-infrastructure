@@ -21,20 +21,41 @@ function guardDefaults(): { interface: string; tailnetTcp: number[] } {
     return { interface: bridge, tailnetTcp: tailnetTcp.map(Number) };
 }
 
+// outside: `nft list table` prints each chain as `chain <name> {`, its rules, then `}`, and a
+// counter with what it counted so far.
+function rulesOf(table: string, chain: string): string[] {
+    const lines = table.split('\n').map((line) => line.trim());
+    const start = lines.indexOf(`chain ${chain} {`);
+    if (start === -1) {
+        return [];
+    }
+    const end = lines.indexOf('}', start);
+
+    return lines
+        .slice(start + 1, end)
+        .filter((line) => line !== '')
+        .map((line) => line.replace(/ counter packets \d+ bytes \d+/u, ' counter'));
+}
+
 describe('guard', () => {
     test('the node takes connections from the tailnet on its declared ports alone, and none from the bridge', async () => {
-        // Given - the nftables guard roles/security installs, as the kernel holds it
-        const table = await onHost(['nft', 'list', 'table', 'inet', 'studio_guard']);
-        const rules = table.stdout.split('\n').map((line) => line.trim());
+        // Given - the nftables guard roles/security installs, as the kernel holds it, and the node's bridge address
         const { interface: bridge, tailnetTcp } = guardDefaults();
-        const on = (prefix: string): string[] => rules.filter((rule) => rule.startsWith(prefix));
+        const table = await onHost(['nft', 'list', 'table', 'inet', 'studio_guard']);
+        const address = await onHost(['ip', '-4', '-o', 'addr', 'show', 'dev', bridge]);
+        const nodeIp = /\binet (?<ip>[\d.]+)\//u.exec(address.stdout)?.groups?.ip;
+        const input = rulesOf(table.stdout, 'input');
+        const on = (prefix: string): string[] => input.filter((rule) => rule.startsWith(prefix));
 
-        // Then - the tailnet's ports then a drop, NodePorts dropped, and the bridge closed but to the host and DHCP (docs/decisions/006-the-host-has-no-public-inbound-path.md)
+        // Then - the tailnet's ports then a drop, NodePorts dropped, the bridge closed but to the host and DHCP, and the tailnet's API traffic sent to the node address (docs/decisions/006-the-host-has-no-public-inbound-path.md)
         expect({
             bridgeLast: on(`iif "${bridge}"`).at(-1),
             code: table.code,
             nodePorts: on(`iif "${bridge}"`).filter((rule) => rule.includes('30000-32767')),
             tailnet: on('iifname "tailscale0"'),
+            tailnetApi: rulesOf(table.stdout, 'tailnet_api').filter(
+                (rule) => !rule.startsWith('type '),
+            ),
         }).toStrictEqual({
             bridgeLast: `iif "${bridge}" drop`,
             code: 0,
@@ -46,6 +67,7 @@ describe('guard', () => {
                 `iifname "tailscale0" tcp dport { ${tailnetTcp.join(', ')} } accept`,
                 'iifname "tailscale0" drop',
             ],
+            tailnetApi: [`iifname "tailscale0" tcp dport 6443 counter dnat ip to ${nodeIp}`],
         });
     });
 });
