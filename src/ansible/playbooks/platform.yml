@@ -30,13 +30,15 @@
         manifest_dir: "/tmp/k8s-manifests-{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_lowercase', 'digits'], length=8) }}"
       tags: [always]
 
-    # invariant: staging and its cleanup change nothing deployed, so a quiet deploy reports changed=0.
+    # invariant: staging and its cleanup change nothing deployed, so they run in a check run too,
+    # and a quiet deploy reports changed=0.
     - name: Create the manifest directory on the node
       ansible.builtin.file:
         path: "{{ manifest_dir }}"
         state: directory
         mode: "0755"
       changed_when: false
+      check_mode: false
       tags: [always]
 
     # value: one archive, not one round trip per file: the per-file copy was 266s of a 6-minute CI deploy.
@@ -54,6 +56,7 @@
       become: false
       run_once: true
       changed_when: false
+      check_mode: false
       tags: [always]
 
     - name: Unpack them on the node
@@ -61,6 +64,7 @@
         src: "{{ lookup('ansible.builtin.env', 'TMPDIR') | default('/tmp', true) }}/studio-platform.tgz"
         dest: "{{ manifest_dir }}"
       changed_when: false
+      check_mode: false
       tags: [always]
 
   roles:
@@ -81,4 +85,5 @@
         path: "{{ manifest_dir }}"
         state: absent
       changed_when: false
+      check_mode: false
       tags: [always]
