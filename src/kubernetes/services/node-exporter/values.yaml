@@ -3,6 +3,11 @@ fullnameOverride: node-exporter
 # value: 3, not 10 (ADR-013).
 revisionHistoryLimit: 3
 
+# outside: OrbStack publishes every wildcard listener on every interface of the Mac; false binds
+# the node address alone, which the scrapes dial (ADR-006).
+service:
+  listenOnAllInterfaces: false
+
 resources:
   requests:
     cpu: 10m

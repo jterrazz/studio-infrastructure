@@ -93,7 +93,7 @@ probed today with no edit here.
 | `health/volumes/bound.test.ts`                    | every PersistentVolume is Bound and `Retain`                                                                                           | the API server           |
 | `admission/app-deployer-ownership/policy.test.ts` | the ownership policy's cases, admitted and denied, as an app's identity, its InfisicalSecrets included                                 | k3d, in the upgrade test |
 | `admission/host-access/policy.test.ts`            | only kube-system and the two named telemetry agents may touch the host                                                                 | k3d, in the upgrade test |
-| `host/`                                           | sshd takes keys alone, the nft guard, unattended-upgrades, Secret encryption, the Pod Security default                                 | the node, as root        |
+| `host/`                                           | sshd takes keys alone, the nft guard, no wildcard listener but sshd's, unattended-upgrades, Secret encryption, the Pod Security default | the node, as root        |
 
 A status outside the annotated set fails (a 502, a 503 and `unreachable` never
 are in it), and so does a certificate within 15 days of expiry: cert-manager

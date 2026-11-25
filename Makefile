@@ -38,11 +38,11 @@ specs/node_modules/.install: specs/package-lock.json
 	cd specs && npm ci
 	@touch specs/node_modules/.install
 
-# invariant: k3s writes a loopback server address; the MagicDNS rewrite makes the file usable
-# from a tailnet client.
+# invariant: k3s writes the address it binds, the node's; the MagicDNS rewrite makes the file
+# usable from a tailnet client.
 kubeconfig: ## Regenerate ./kubeconfig.yaml from the VM (server = MagicDNS name)
 	@orb -m $(VM_NAME) -u root cat /etc/rancher/k3s/k3s.yaml \
-		| sed -E 's#https://(127\.0\.0\.1|0\.0\.0\.0):6443#https://$(NODE_FQDN):6443#' > $(KUBECONFIG_FILE)
+		| sed -E 's#https://[^/:]+:6443#https://$(NODE_FQDN):6443#' > $(KUBECONFIG_FILE)
 	@chmod 600 $(KUBECONFIG_FILE)
 	@grep -q 'server: https://$(NODE_FQDN):6443' $(KUBECONFIG_FILE) \
 		|| { echo "✗ server address not rewritten in $(KUBECONFIG_FILE)"; exit 1; }

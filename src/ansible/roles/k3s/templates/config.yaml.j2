@@ -28,6 +28,10 @@ tls-san:
   - {{ tailscale_dns_hostname }}
 {% endif %}
 
+# outside: OrbStack publishes every wildcard listener on every interface of the Mac, so the API
+# server and the kubelet bind the node address; k3s keeps 127.0.0.1 and ::1 too (ADR-006).
+bind-address: {{ k3s_node_ip }}
+
 # resolv-conf MUST be the uplink file with real upstream servers, never
 # /etc/resolv.conf (the 127.0.0.53 stub on systemd-resolved hosts). With the
 # stub, kubelet hands it to pods inheriting host DNS (CoreDNS runs

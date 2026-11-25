@@ -11,6 +11,9 @@ Revised 2026-10-25: the guard no longer names port 2000, which nothing on the
 host binds since cloudflared left the host network.
 Revised 2026-10-25: the guard is the node's one firewall, a default deny on the
 tailnet and the bridge; UFW is gone, OpenSSH's own algorithms are kept.
+Revised 2026-11-25, a proposal awaiting the owner's word: nothing on the node
+listens on a wildcard address but sshd, since OrbStack published the API
+server, the kubelet and node-exporter on every interface of the Mac.
 
 ## Context
 
@@ -37,6 +40,18 @@ answered a neighbouring machine.
   and every Mac tool reach the VM) and DHCP's replies pass. UFW, which held a
   weaker copy of the same rules behind k3s' iptables chains, is gone. The
   first gate for 80/443 is Traefik's `loadBalancerSourceRanges`.
+- **No listener on a wildcard address but sshd.** OrbStack publishes every
+  wildcard listener on every interface of the Mac (its LAN and tailnet
+  addresses too) and enters the VM over loopback, which the guard admits; a
+  listener bound to one address is not published (measured 2026-11-25). So
+  k3s takes `bind-address: <node ip>`: the API server listens there and on
+  127.0.0.1 and ::1, the kubelet there alone. node-exporter binds the node
+  address (`listenOnAllInterfaces: false`). The guard's `tailnet_api` chain
+  rewrites the tailnet's 6443 to the node address, so CI keeps the API.
+  sshd keeps `0.0.0.0:22`, a port the Mac's own sshd holds.
+
+  A wildcard listener added tomorrow is refused by the host spec
+  `host/listeners/wildcard.test.ts`, not by a firewall.
 - **Secrets encrypted at rest** (`secrets-encryption: true`): without it every
   Secret sits in plaintext in `state.db`, readable through `/mnt/machines`.
   Enabling encrypts only new writes, so the role runs
