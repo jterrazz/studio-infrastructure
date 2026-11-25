@@ -78,7 +78,8 @@ Work deliberately left for later. Each line says what unblocks it.
   - I6, the OrbStack lines go: the Makefile's `orbctl` targets and
     `kubectl.ts`, `helmfile.sh`, `backup.sh`, the 198.19.0.0/16 network
     policy with its snapshots, `/mnt/mac` and `eth0` in the node alerts and
-    dashboard, the skill, the README, and the write-through unit if
+    dashboard, the guard's `[::1]` reset (ADR-006), the skill, the README,
+    and the write-through unit if
     station's fsync measure on the data disk says so (HYPOTHESIS,
     2026-11-20: tart pays OrbStack's tax).
   - I7, the ADRs, Proposed until the owner accepts: a new ADR-031 (one

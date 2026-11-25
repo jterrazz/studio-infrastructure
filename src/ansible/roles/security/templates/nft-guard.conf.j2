@@ -7,6 +7,9 @@ table inet studio_guard {
   chain input {
     type filter hook input priority -10; policy accept;
 
+    # outside: OrbStack forwards each dual-stack listener from every interface of the Mac and
+    # dials it from [::1] (ADR-006).
+    iif "lo" ip6 saddr ::1 meta l4proto tcp ct state new reject with tcp reset
     iif "lo" accept
     ct state established,related accept
     ct state invalid drop
